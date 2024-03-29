@@ -4,6 +4,9 @@
 1. Allow user call functions directly in command line.
 2. Generate help tips automatically.
 
+#### TODO
+1. Support class's function with self as the first argument.
+
 #### Code example
 ``` python
 #!/bin/bash
