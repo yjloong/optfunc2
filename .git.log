@@ -1945,3 +1945,11 @@ git-sync: Preparing. Repo in .git /home/yjl00405/autocall
 git-sync: Mode sync
 git-sync: Using origin/master
 git-sync: Committing local changes using git add -A ; git commit -m "changes from OwO on Thu Jun 6 20:51:13 CST 2024";
+[master e839fbc] changes from OwO on Thu Jun 6 20:51:13 CST 2024
+ 1 file changed, 8 insertions(+)
+git-sync: Auto-commit left uncommitted changes. Please add or remove them as desired and retry.
+Syncing due to timeout
+git-sync: Preparing. Repo in .git /home/yjl00405/autocall
+git-sync: Mode sync
+git-sync: Using origin/master
+git-sync: Committing local changes using git add -A ; git commit -m "changes from OwO on Thu Jun 6 20:51:13 CST 2024";
