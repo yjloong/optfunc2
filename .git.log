@@ -8,3 +8,12 @@ git-sync: Preparing. Repo in .git /home/yjl00405/autocall
 git-sync: Mode sync
 git-sync: Using origin/master
 git-sync: Committing local changes using git add -A ; git commit -m "changes from OwO on Thu Jun 6 20:51:05 CST 2024";
+[master c54a2f3] changes from OwO on Thu Jun 6 20:51:05 CST 2024
+ 1 file changed, 10 insertions(+), 24239 deletions(-)
+ rewrite .git.log (99%)
+git-sync: Auto-commit left uncommitted changes. Please add or remove them as desired and retry.
+Syncing due to timeout
+git-sync: Preparing. Repo in .git /home/yjl00405/autocall
+git-sync: Mode sync
+git-sync: Using origin/master
+git-sync: Committing local changes using git add -A ; git commit -m "changes from OwO on Thu Jun 6 20:51:05 CST 2024";
