@@ -64,7 +64,7 @@ def parse_run(argv = sys.argv[1:]):
 
         for func in __register_funcs:
             parameters = inspect.signature(func).parameters
-            print(f'    --{func.__name__:<10s}', end='')
+            print(f'    --{func.__name__:<10s} ', end='')
             for name in parameters:
                 anno = parameters[name].annotation
                 defa = parameters[name].default
