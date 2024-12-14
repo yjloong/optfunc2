@@ -7,71 +7,73 @@
 
 #### Notice
 1. It's better to add argument type for each autocall functions.
-2. str type argument must be defined explicitly.
-3. @cmdline_default is a subset of @cmdline, which means function with @cmdline_default will have @cmdline implicitly.
-4. Arguments of function with @cmdline_default should be optional or no argument.
+2. Function with @optfunc_default has @optfunc implicitly.
+3. Arguments of function with @optfunc_default should be optional or no argument.
+4. Not support two type of variadic arguments.
 
 #### TODO
-1. Support class's function with self as the first argument.
+1. Beautiful print.
 
 #### Code example
 ``` python
-#!/bin/python3.8
-from autocall import *
+from optfunc import *
 
-# The tar @cmdline is used to register the function.
-@cmdline
-def test1():
-    print(f'test1()')
+@optfunc
+def arg_test_positional_only(pos_only0, pos_only1: int, pos_only2 = 5, pos_only3: int = 6):
+    """summary for the function
+
+    Args:
+        pos_only0 (_type_): This is the first positional-only argument.
+        pos_only1 (int): This is the second positional-only argument.
+        pos_only2 (int, optional): This is the third positional-only argument. Defaults to 5.
+        pos_only3 (int, optional): This is the fourth positional-only argument. Defaults to 6.
+    """
+    " Argument test for positional-only arguments. "
+    print(f'pos_only0: {pos_only0}, pos_only1: {pos_only1}, pos_only2: {pos_only2}, pos_only3: {pos_only3}')
     pass
 
-@cmdline
-@cmdline_default
-def test2(arg: int = 0):
-    print(f'test2({arg})')
+@optfunc
+def arg_test_positional_or_keyword(pos_or_kw, pos_or_kw1: int, pos_or_kw2 = 3, pos_or_kw3: int = 4):
+    " Argument test for positional-or-keyword arguments. "
+    print(f'pos_or_kw: {pos_or_kw}, pos_or_kw1: {pos_or_kw1}, pos_or_kw2: {pos_or_kw2}, pos_or_kw3: {pos_or_kw3}')
     pass
 
-@cmdline
-def test3(arg1, arg2: str = 'this is a string'):
-    print(f'test3({arg1}, {arg2})')
-    
-@cmdline
-def test4(arg1, arg2: int):
-    'You can add some extra information here.'
-    print(f'test4({arg1}, {arg2})')
+@optfunc
+def arg_test_kw_only(*, kw_only0, kw_only1: int, kw_only2 = 9, kw_only3: int = 10):
+    " Argument test for keyword-only arguments. "
+    print(f'kw_only0: {kw_only0}, kw_only1: {kw_only1}, kw_only2: {kw_only2}, kw_only3: {kw_only3}')
     pass
 
-@cmdline_default
-def test5(arg1: int = 1, arg2: str = 'good'):
-    print(f'test5({arg1}, {arg2})')
-
-# main function
-parse_and_run()
+if __name__ == '__main__':
+    optfunc_start(globals=globals(), has_abbrev=False, header_doc='This is a test file for the module "autocall".')
 ```
 #### Run the code
 ``` bash
-~/autocall/src $ ./test.py --help
-Help Tips Provided by Autocall.
-  option:
-    --test1     
+~/:$ python3 test.py -h
+Usage: test.py [command] [<args>|--help]
 
-    --test2     [arg = 0]  
-                The function will be called directly if not specific.
+This is a test file for the module "autocall".
 
-    --test3     arg1  [arg2 = this is a string]  
+commands:
+    arg_test_positional_only           summary for the function
+    arg_test_positional_or_keyword     Argument test for positional-or-keyword arguments.
+    arg_test_kw_only                   Argument test for keyword-only arguments.
 
-    --test4     arg1  arg2  
-                You can add some extra information here.
+~/:$ python3 test.py arg_test_positional_only -h
+Usage: test.py arg_test_positional_only [OPTIONS]
 
-    --test5     [arg1 = 1]  [arg2 = good]  
-                The function will be called directly if not specific.
+summary for the function
 
-    --help      [verbose = notverbose]  
-                Give the argument "verbose" instead of "notverbose" to print detail information.
 
-~/autocall/src $ ./test.py --test5 10 'hello'
-test5(10, hello)
-~/autocall/src $ ./test.py
-test2(0)
-test5(1, good)
+Arguments:
++-------------+------+---------+-------------------------------------------------------------+
+|     Opt     | Type | Default |                             Desc                            |
++-------------+------+---------+-------------------------------------------------------------+
+| --pos_only0 | any  |         |         This is the first positional-only argument.         |
+| --pos_only1 | int  |         |         This is the second positional-only argument.        |
+| --pos_only2 | any  |    5    |  This is the third positional-only argument. Defaults to 5. |
+| --pos_only3 | int  |    6    | This is the fourth positional-only argument. Defaults to 6. |
++-------------+------+---------+-------------------------------------------------------------+
+~/:$ python3 test.py arg_test_positional_only --pos_only0 "good day" --pos_only1 2
+pos_only0: good day, pos_only1: 2, pos_only2: 5, pos_only3: 6
 ```

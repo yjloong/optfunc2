@@ -1,0 +1,2 @@
+prettytable
+docstring_parser
