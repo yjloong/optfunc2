@@ -312,7 +312,9 @@ def cmdline_start(globals, locals = None, *, argv = sys.argv, header_doc: str = 
     """
 
     if len(argv) == 1:
-        return
+        if not registered_func_default:
+            return 
+        argv.append(registered_func_default.__name__)
     
     if argv[1] == 'help' or argv[1] == '--help' or argv[1] == '-h':
         help(header_doc)

@@ -1,22 +1,25 @@
 # Call function directly in cmd line
 
-#### Features
+### Features
 1. Allow user call functions directly in command line.
 2. Generate help tips automatically.
 3. Add default called functions if not function was specific.
 
-#### Notice
+### Notice
 1. It's better to add argument type for each autocall functions.
 2. Function with @optfunc_default has @optfunc implicitly.
 3. Arguments of function with @optfunc_default should be optional or no argument.
 4. Not support two type of variadic arguments.
 
-#### TODO
-1. Beautiful print.
+### ChangeLog
+#### 0.1.2 (2023-05-06)
+1. Add support for default called functions.
+2. Fix README.md.
+3. Add ChangeLog in README.md.
 
-#### Code example
+### Code example
 ``` python
-from optfunc import *
+from optfunc2 import *
 
 @optfunc
 def arg_test_positional_only(pos_only0, pos_only1: int, pos_only2 = 5, pos_only3: int = 6):
@@ -47,7 +50,7 @@ def arg_test_kw_only(*, kw_only0, kw_only1: int, kw_only2 = 9, kw_only3: int = 1
 if __name__ == '__main__':
     optfunc_start(globals=globals(), has_abbrev=False, header_doc='This is a test file for the module "autocall".')
 ```
-#### Run the code
+### Run the code
 ``` bash
 ~/:$ python3 test.py -h
 Usage: test.py [command] [<args>|--help]
