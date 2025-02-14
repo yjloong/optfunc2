@@ -2,6 +2,7 @@
 import sys
 import os
 
+
 # sys.path.append("Z:\\autocall\\src")
 current_dir = os.path.dirname(os.path.realpath(__file__))
 autocall_dir = os.path.join(current_dir, 'src')
@@ -14,7 +15,13 @@ import optfunc2
 
 @cmdline_default
 def test2():
+    test3()
     print('This function is a default call function.')
+
+@cmdline
+def test3():
+    print(called_directly())
+    print('This function is a normal call function.')
 
 @cmdline
 def arg_test_positional_only(pos_only0, pos_only1: int, pos_only2 = 5, pos_only3: int = 6):

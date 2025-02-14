@@ -12,6 +12,11 @@
 4. Not support two type of variadic arguments.
 
 ### ChangeLog
+#### 0.2.1 (2025-2-14)
+1. Fix installing dependencies automatically.
+2. Add function 'called_directly' used to check if the function is called as entry point.
+   This function can be used in function development.
+   
 #### 0.1.2 (2023-05-06)
 1. Add support for default called functions.
 2. Fix README.md.

@@ -299,6 +299,11 @@ def pair_argv(argv, has_abbrev = True):
     
     return arg_pairs
 
+_called_func = None
+def called_directly():
+    global _called_func
+    return _called_func.__name__ == inspect.currentframe().f_back.f_code.co_name
+
 # def parse_run(argv = sys.argv[1:]):
 def cmdline_start(globals, locals = None, *, argv = sys.argv, header_doc: str = 'Help Tips Provided by Autocall.', has_abbrev = True):
     """Begin to handle argv and execute the corresponding function.
@@ -310,7 +315,8 @@ def cmdline_start(globals, locals = None, *, argv = sys.argv, header_doc: str = 
         header_doc (str, optional): Will be printed as the header of help information.
         has_abbrev (bool, optional): Whether to support abbreviations. Defaults to True.
     """
-
+    global _called_func
+    
     if len(argv) == 1:
         if not registered_func_default:
             return 
@@ -333,6 +339,8 @@ def cmdline_start(globals, locals = None, *, argv = sys.argv, header_doc: str = 
     if '-h' in argv or '--help' in argv:
         cmd_help(func, has_abbrev)
         return
+    
+    _called_func = func
     
     # parse argv
     arg_pairs = pair_argv(argv, has_abbrev)
