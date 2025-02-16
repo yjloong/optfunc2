@@ -11,7 +11,7 @@ def add(a: float, b: float):
     print(f"{a} + {b} = {a + b}")
 
 @cmdline
-def multiply(x: int, y: int = 5):
+def multiply(x: int|float, y: int = 5):
     """multiply two numbers. The second number is optional.
 
     Args:

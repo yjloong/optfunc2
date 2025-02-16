@@ -3,6 +3,7 @@ import prettytable
 import docstring_parser
 import sys
 import ast
+import types
 
 # functions taged by @cmdline
 registered_funcs = []
@@ -93,7 +94,7 @@ def decode_opts(arg_pairs, func: callable):
             raise ValueError(f'--{name} need more arguments.')
         
         try:
-            if anno != inspect.Signature.empty and anno not in [dict, list]:
+            if anno not in [dict, list, inspect.Signature.empty] and type(anno) != types.UnionType:
                 value = anno(val)
             else:
                 try: 
@@ -104,7 +105,13 @@ def decode_opts(arg_pairs, func: callable):
                 anno_new = type(value)
 
                 if anno != inspect.Signature.empty:
-                    if anno_new != anno:
+                    if type(anno) == types.UnionType:
+                        type_list = [i.strip() for i in str(anno).split('|')]
+                        if anno_new.__name__ not in type_list:
+                            raise Exception(f'Type of {opt} should be one of {repr(type_list)}.')
+                         
+                    elif anno_new != anno:
+                        print(f'{anno_new = } {anno = }')
                         raise ValueError(f'Value type of {opt} should be {anno.__name__}.')
                 
                 anno = anno_new

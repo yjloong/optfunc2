@@ -17,6 +17,7 @@
 3. Support pytest to run test.
 4. Support omitting called function name who is default.
 5. pyproject.toml format change for poetry version 2.1.0.
+6. Support types.UnionType in function arguments.
 
 #### 0.2.1 (2025-2-14)
 1. Fix installing dependencies automatically.

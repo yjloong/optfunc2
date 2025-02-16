@@ -102,6 +102,14 @@ class TestBasicFunctionality:
         assert "echo" in output
         assert "math_op" in output
         assert "默认命令的文档" in output
+    
+    def test_serveral_type(self):
+        """测试单参数指定多类型"""
+        @cmdline
+        def type_test(data: list|int):
+            print(f'{type(data)}')
+        output = capture_output(["test_optfunc2.py", "type_test", "--data", "[1,2,3]"], globals(), locals=locals())
+        assert "list" in output
 
 # --------------------------
 # 边界条件测试
