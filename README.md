@@ -10,25 +10,6 @@
 2. Function with @optfunc_default has @optfunc implicitly.
 3. Not support two type of variadic arguments.
 
-### ChangeLog
-### 0.2.2 (2025-2-16)
-1. Support single argument in bool type.
-2. Don't need user to pass globals() in cmdline_start().
-3. Support pytest to run test.
-4. Support omitting called function name who is default.
-5. pyproject.toml format change for poetry version 2.1.0.
-6. Support types.UnionType in function arguments.
-
-#### 0.2.1 (2025-2-14)
-1. Fix installing dependencies automatically.
-2. Add function 'called_directly' used to check if the function is called as entry point.
-   This function can be used in function development.
-   
-#### 0.1.2 (2023-05-06)
-1. Add support for default called functions.
-2. Fix README.md.
-3. Add ChangeLog in README.md.
-
 ### Code example1 -- calculator
 ``` python
 from optfunc2 import cmdline, cmdline_default, cmdline_start
@@ -44,7 +25,7 @@ def add(a: float, b: float):
     print(f"{a} + {b} = {a + b}")
 
 @cmdline
-def multiply(x: int, y: int = 5):
+def multiply(x: int|float, y: int = 5):
     """multiply two numbers. The second number is optional.
 
     Args:
@@ -116,6 +97,8 @@ Arguments:
 2.3 + 3.0 = 5.3
 ~/optfunc2$ python src/example_calc.py multiply -x 3
 3 × 5 = 15
+~/optfunc2$ python src/example_calc.py multiply -x 2.3
+2.3 × 5 = 11.5
 ~/optfunc2$ python src/example_calc.py stats --numbers '[1, 2, 3, 4, 5]'
 sum: 15
 average: 3.00
