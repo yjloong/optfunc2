@@ -19,9 +19,8 @@ requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [project.urls]
-"Homepage" = "https://gitee.com/z-bajer/autocall"
-"Bug Reports" = "https://gitee.com/z-bajer/autocall/issues"
-"Source" = "https://gitee.com/z-bajer/autocall"
+"Homepage" = "https://github.com/yjloong/optfunc2"
+"Bug Tracker" = "https://github.com/yjloong/optfunc2/issues"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
