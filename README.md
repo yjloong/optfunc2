@@ -8,10 +8,16 @@
 ### Notice
 1. It's better to add argument type for each autocall functions.
 2. Function with @optfunc_default has @optfunc implicitly.
-3. Arguments of function with @optfunc_default should be optional or no argument.
-4. Not support two type of variadic arguments.
+3. Not support two type of variadic arguments.
 
 ### ChangeLog
+### 0.2.2 (2025-2-16)
+1. Support single argument in bool type.
+2. Don't need user to pass globals() in cmdline_start().
+3. Support pytest to run test.
+4. Support omitting called function name who is default.
+5. pyproject.toml format change for poetry version 2.1.0.
+
 #### 0.2.1 (2025-2-14)
 1. Fix installing dependencies automatically.
 2. Add function 'called_directly' used to check if the function is called as entry point.
@@ -22,66 +28,151 @@
 2. Fix README.md.
 3. Add ChangeLog in README.md.
 
-### Code example
+### Code example1 -- calculator
 ``` python
-from optfunc2 import *
+from optfunc2 import cmdline, cmdline_default, cmdline_start
 
-@optfunc
-def arg_test_positional_only(pos_only0, pos_only1: int, pos_only2 = 5, pos_only3: int = 6):
-    """summary for the function
+@cmdline_default
+def add(a: float, b: float):
+    """add two numbers
 
     Args:
-        pos_only0 (_type_): This is the first positional-only argument.
-        pos_only1 (int): This is the second positional-only argument.
-        pos_only2 (int, optional): This is the third positional-only argument. Defaults to 5.
-        pos_only3 (int, optional): This is the fourth positional-only argument. Defaults to 6.
+        a (float): The First number
+        b (float): The Second number
     """
-    " Argument test for positional-only arguments. "
-    print(f'pos_only0: {pos_only0}, pos_only1: {pos_only1}, pos_only2: {pos_only2}, pos_only3: {pos_only3}')
-    pass
+    print(f"{a} + {b} = {a + b}")
 
-@optfunc
-def arg_test_positional_or_keyword(pos_or_kw, pos_or_kw1: int, pos_or_kw2 = 3, pos_or_kw3: int = 4):
-    " Argument test for positional-or-keyword arguments. "
-    print(f'pos_or_kw: {pos_or_kw}, pos_or_kw1: {pos_or_kw1}, pos_or_kw2: {pos_or_kw2}, pos_or_kw3: {pos_or_kw3}')
-    pass
+@cmdline
+def multiply(x: int, y: int = 5):
+    """multiply two numbers. The second number is optional.
 
-@optfunc
-def arg_test_kw_only(*, kw_only0, kw_only1: int, kw_only2 = 9, kw_only3: int = 10):
-    " Argument test for keyword-only arguments. "
-    print(f'kw_only0: {kw_only0}, kw_only1: {kw_only1}, kw_only2: {kw_only2}, kw_only3: {kw_only3}')
-    pass
+    Args:
+        x (int): The First number
+        y (int, optional): The Second number. Defaults to 5.
+    """
+    print(f"{x} × {y} = {x * y}")
 
-if __name__ == '__main__':
-    optfunc_start(globals=globals(), has_abbrev=False, header_doc='This is a test file for the module "autocall".')
+@cmdline
+def stats(numbers: list):
+    """statistics of numbers in list
+
+    Args:
+        numbers (list): Target List.
+    """ 
+    print(f"sum: {sum(numbers)}")
+    print(f"average: {sum(numbers)/len(numbers):.2f}")
+
+if __name__ == "__main__":
+    cmdline_start(header_doc="✨ calc CLI", has_abbrev=True)
 ```
-### Run the code
-``` bash
-~/:$ python3 test.py -h
-Usage: test.py [command] [<args>|--help]
 
-This is a test file for the module "autocall".
+### Generate help tips automatically
+``` bash
+~/optfunc2$ python src/example_calc.py help
+Usage: src/example_calc.py [command] [<args>|--help]
+
+✨ calc CLI
 
 commands:
-    arg_test_positional_only           summary for the function
-    arg_test_positional_or_keyword     Argument test for positional-or-keyword arguments.
-    arg_test_kw_only                   Argument test for keyword-only arguments.
+    add          [default] add two numbers
+    multiply     multiply two numbers. The second number is optional.
+    stats        statistics of numbers in list
 
-~/:$ python3 test.py arg_test_positional_only -h
-Usage: test.py arg_test_positional_only [OPTIONS]
+~/optfunc2$ python src/example_calc.py add -h
+Usage: src/example_calc.py add [OPTIONS]
 
-summary for the function
+add two numbers
 
 
 Arguments:
-+-------------+------+---------+-------------------------------------------------------------+
-|     Opt     | Type | Default |                             Desc                            |
-+-------------+------+---------+-------------------------------------------------------------+
-| --pos_only0 | any  |         |         This is the first positional-only argument.         |
-| --pos_only1 | int  |         |         This is the second positional-only argument.        |
-| --pos_only2 | any  |    5    |  This is the third positional-only argument. Defaults to 5. |
-| --pos_only3 | int  |    6    | This is the fourth positional-only argument. Defaults to 6. |
-+-------------+------+---------+-------------------------------------------------------------+
-~/:$ python3 test.py arg_test_positional_only --pos_only0 "good day" --pos_only1 2
-pos_only0: good day, pos_only1: 2, pos_only2: 5, pos_only3: 6
++-----+--------+-------+---------+-------------------+
+| Opt | Abbrev |  Type | Default |        Desc       |
++-----+--------+-------+---------+-------------------+
+| --a |   -a   | float |         |  The First number |
+| --b |   -b   | float |         | The Second number |
++-----+--------+-------+---------+-------------------+
+
+
+~/optfunc2$ python src/example_calc.py stats -h
+Usage: src/example_calc.py stats [OPTIONS]
+
+statistics of numbers in list
+
+
+Arguments:
++-----------+--------+------+---------+--------------+
+|    Opt    | Abbrev | Type | Default |     Desc     |
++-----------+--------+------+---------+--------------+
+| --numbers |   -n   | list |         | Target List. |
++-----------+--------+------+---------+--------------+
+```
+
+### Usage
+``` bash
+~/optfunc2$ python src/example_calc.py add -a 2.3 -b 3
+2.3 + 3.0 = 5.3
+~/optfunc2$ python src/example_calc.py -a 2.3 -b 3
+2.3 + 3.0 = 5.3
+~/optfunc2$ python src/example_calc.py multiply -x 3
+3 × 5 = 15
+~/optfunc2$ python src/example_calc.py stats --numbers '[1, 2, 3, 4, 5]'
+sum: 15
+average: 3.00
+```
+
+### Code example2 -- list files
+``` python
+from optfunc2 import cmdline, cmdline_default, cmdline_start
+import os
+
+@cmdline_default
+def list_files(directory: str = ".", show_size: bool = False):
+    """List files in a directory.
+
+    Args:
+        directory (str, optional): Target directory. Defaults to ".".
+        show_size (bool, optional): Whether to show size of file. Defaults to False.
+    """
+    for f in os.listdir(directory):
+        path = os.path.join(directory, f)
+        if show_size and os.path.isfile(path):
+            print(f"{f} ({os.path.getsize(path)} bytes)")
+        else:
+            print(f)
+
+if __name__ == "__main__":
+    cmdline_start(header_doc="📁 file manager", has_abbrev=True)
+```
+
+### Usage
+``` bash
+$ python src/example_file_operator.py -h
+Usage: src/example_file_operator.py [command] [<args>|--help]
+
+📁 file manager
+
+commands:
+    list_files     [default] List files in a directory.
+
+$ python src/example_file_operator.py list_files -h
+Usage: src/example_file_operator.py list_files [OPTIONS]
+
+List files in a directory.
+
+
+Arguments:
++-------------+--------+------+---------+--------------------------------------------------+
+|     Opt     | Abbrev | Type | Default |                       Desc                       |
++-------------+--------+------+---------+--------------------------------------------------+
+| --directory |   -d   | str  |   '.'   |        Target directory. Defaults to ".".        |
+| --show_size |   -s   | bool |  False  | Whether to show size of file. Defaults to False. |
++-------------+--------+------+---------+--------------------------------------------------+
+$ python src/example_file_operator.py
+LICENSE.txt
+.gitignore
+pyproject.toml
+$ python src/example_file_operator.py -s
+LICENSE.txt (1081 bytes)
+.gitignore (132 bytes)
+pyproject.toml (719 bytes)
 ```

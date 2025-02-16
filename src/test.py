@@ -1,7 +1,8 @@
 #!/bin/python3
+import multiprocessing.process
 import sys
 import os
-
+import multiprocessing
 
 # sys.path.append("Z:\\autocall\\src")
 current_dir = os.path.dirname(os.path.realpath(__file__))
@@ -49,5 +50,10 @@ def arg_test_kw_only(*, kw_only0, kw_only1: int, kw_only2 = 9, kw_only3: int = 1
     print(f'kw_only0: {kw_only0}, kw_only1: {kw_only1}, kw_only2: {kw_only2}, kw_only3: {kw_only3}')
     pass
 
-if __name__ == '__main__':
-    cmdline_start(globals=globals(), has_abbrev=False, header_doc='This is a test file for the module "autocall".')
+@cmdline
+def need_main_test():
+    """测试windows版本multiprocessing模块以及GUI框架(tkinter, PyQt)需要放在main块中执行。
+    """
+    multiprocessing.Process(target=test2).start()
+
+cmdline_start(has_abbrev=False, header_doc='This is a test file for the module "autocall".')

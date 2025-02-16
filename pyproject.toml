@@ -1,23 +1,29 @@
-[tool.poetry]
+[project]
 name = "optfunc2"
-version = "0.2.1"
-description = "Generate options from function."
-authors = ["bajeer <z_bajer@yeah.net>"]
+version = "0.2.2"
+description = "Generate command line options and help/tips from function automatically."
+authors = [
+    {name = "bajeer",email = "z-bajeer@yeah.net"}
+]
+license = {text = "PyPA"}
 readme = "README.md"
-license = "PyPA"
+requires-python = ">=3.8,<4.0"
+dependencies = [
+    "docstring-parser (>=0.16,<0.17)",
+    "prettytable (==3.11.0)"
+]
 
-[tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-prettytable = "^3.14.0"
-docstring_parser = "^0.16"
-
-[tool.poetry.dev-dependencies]
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [project.urls]
 "Homepage" = "https://gitee.com/z-bajer/autocall"
 "Bug Reports" = "https://gitee.com/z-bajer/autocall/issues"
 "Source" = "https://gitee.com/z-bajer/autocall"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.4"
+pytest-xdist = "^3.6.1"
+

@@ -3,6 +3,7 @@
 __all__ = ['cmdline', 'cmdline_default', 'cmdline_start',
            'optfunc', 'optfunc_default', 'optfunc_start', 'called_directly']
 
+import atexit
 from optfunc2.parser import cmdline as cmdline
 from optfunc2.parser import cmdline_default as cmdline_default
 from optfunc2.parser import cmdline_start as cmdline_start

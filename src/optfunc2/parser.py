@@ -8,6 +8,9 @@ import ast
 registered_funcs = []
 registered_func_default = None
 
+# Main eval function in this module must be called only once.
+_called_func = None
+
 colors = {
     "red": 91,
     "blue": 94,
@@ -39,9 +42,6 @@ def decode_func_args(func: callable):
     abbrev_list.append('h')
     
     for name, param in inspect.signature(func).parameters.items():
-        if len(name) == 1:
-            abbrev_list.append(name)
-
         abbrev = name[0]
 
         desc = inspect.Signature.empty
@@ -61,23 +61,23 @@ def decode_func_args(func: callable):
     return args_list
 
 def get_and_check_opt(args_list: list, opt_name):
-    opt_name2 = opt_name
+    opt_name = opt_name
+    opt_name_full = ''
+    opt_name_abbrev = ''
     if opt_name.startswith('--'):
-        opt_name = opt_name[2:]
-        if len(opt_name) == 1:
-            raise ValueError(f'{opt_name} is not a valid option name.')
+        opt_name_full = opt_name[2:]
     elif opt_name.startswith('-'):
-        opt_name = opt_name[1:]
-        if len(opt_name) != 1:
-            raise ValueError(f'{opt_name} is not a valid option name.')
+        opt_name_abbrev = opt_name[1:]
+        if len(opt_name_abbrev) != 1:
+            raise ValueError(f'{opt_name} should be a single character abbreviation or full name beginning with --.')
     else:
         raise ValueError(f'{opt_name} is not a valid option name.')
     
     for idx, (_, name, abbrev, _, _, _) in enumerate(args_list):
-        if name == opt_name or abbrev == opt_name:
+        if name == opt_name_full or abbrev == opt_name_abbrev:
             return args_list.pop(idx)
         
-    raise ValueError(f'{opt_name2} not found.')
+    raise ValueError(f'{opt_name} not found.')
 
 def decode_opts(arg_pairs, func: callable):
     """
@@ -88,8 +88,12 @@ def decode_opts(arg_pairs, func: callable):
 
     for (opt, val) in arg_pairs:
         typ, name, _, anno, _, _ = get_and_check_opt(arg_list, opt)
+        # special case for assuming bool argument
+        if type(val) == bool and anno != bool:
+            raise ValueError(f'--{name} need more arguments.')
+        
         try:
-            if anno != inspect.Signature.empty:
+            if anno != inspect.Signature.empty and anno not in [dict, list]:
                 value = anno(val)
             else:
                 try: 
@@ -97,7 +101,13 @@ def decode_opts(arg_pairs, func: callable):
                 except Exception:
                     value = str(val)
 
-                anno = type(value)
+                anno_new = type(value)
+
+                if anno != inspect.Signature.empty:
+                    if anno_new != anno:
+                        raise ValueError(f'Value type of {opt} should be {anno.__name__}.')
+                
+                anno = anno_new
 
             opt_list.append((typ, name, anno, value))
             
@@ -126,12 +136,6 @@ def cmdline_default(func):
     global registered_funcs
     
     parameters = inspect.getfullargspec(func)
-
-    if len(parameters.args) != 0 and len(parameters.args) != len(parameters.defaults):
-        color_begin('red')
-        print(f'[Autocall Erroring]: Function annotated by @cmdline_default should have zero arguments or all arguments have default value.')
-        color_end()
-        exit(1)
     
     if registered_func_default:
         color_begin('yellow')
@@ -187,10 +191,7 @@ def cmd_help(func: callable, has_abbrev = True):
 
     for (type, name, abbrev, anno, default, desc) in args_list:
         # abbrev, anno, default, desc all may be empty
-        if len(name) == 1:
-            name = '-' + name
-        else:
-            name = '--' + name
+        name = '--' + name
 
         if abbrev == inspect.Signature.empty:
             abbrev = empty_tag
@@ -243,6 +244,10 @@ def help(header_doc):
             color_begin('green')
             print(f'    {f.__name__:<{max_name_len}s}', end='')
             color_end()
+            if f == registered_func_default:
+                color_begin('yellow')
+                print('[default] ', end='')
+                color_end()
             if doc:
                 doc_list = [d.strip() for d in doc.split('\n') if d.strip()]
                 doc = doc_list[0]
@@ -257,7 +262,8 @@ def match_and_check(name):
         Match the name with the function name.
         """
         global registered_funcs
-        for f in registered_funcs:
+        # [::-1] ensure the order of functions with same name.
+        for f in registered_funcs[::-1]:
             if f.__name__ == name:
                 return f
         
@@ -267,8 +273,10 @@ def pair_argv(argv, has_abbrev = True):
     """ Support these styles:
     --arg val
     --arg=val
+    --arg 
     -a val
     -aval
+    -a
     """
     if len(argv) == 0:
         return []
@@ -283,9 +291,14 @@ def pair_argv(argv, has_abbrev = True):
                 arg_pairs.append((arg, val))
             else:
                 if len(argv) == idx + 1:
-                    raise ValueError(f'No value given for argument {arg}.')
-                arg_pairs.append((arg, argv[idx+1]))
-                idx += 1
+                    arg_pairs.append((arg, True))
+                else:
+                    if argv[idx+1].startswith('-'):
+                        arg_pairs.append((arg, True))
+                    else:
+                        arg_pairs.append((arg, argv[idx+1]))
+                        idx += 1 
+                
         elif arg.startswith('-'):
             if not has_abbrev:
                 raise ValueError(f'Unknown argument {arg}. Abbreviations are not supported.')
@@ -293,19 +306,33 @@ def pair_argv(argv, has_abbrev = True):
             if len(arg) != 2:
                 arg_pairs.append((arg[0:2], arg[2:]))
             else:
-                arg_pairs.append((arg, argv[idx+1]))
-                idx += 1
+                # bool type can be used in single character.
+                if len(argv) == idx + 1: # Cmdline ended with a abbreviation, we assume it is a bool type argument.
+                    arg_pairs.append((arg, True))
+                else: # Next argument is belong to the next pair. We assume it is a bool type argument.
+                    if argv[idx+1].startswith('-'):
+                        arg_pairs.append((arg, True))
+                    else: # Normal.
+                        arg_pairs.append((arg, argv[idx+1]))
+                        idx += 1
+                
         idx += 1
     
     return arg_pairs
 
-_called_func = None
 def called_directly():
+    """Check if the function is called by optfunc2 directly.
+
+    Returns:
+        bool: True means called by optfunc2 directly.
+    """
     global _called_func
     return _called_func.__name__ == inspect.currentframe().f_back.f_code.co_name
 
+
+
 # def parse_run(argv = sys.argv[1:]):
-def cmdline_start(globals, locals = None, *, argv = sys.argv, header_doc: str = 'Help Tips Provided by Autocall.', has_abbrev = True):
+def cmdline_start(globals = None, locals = None, *, argv = sys.argv, header_doc: str = 'Help Tips Provided by Autocall.', has_abbrev = False):
     """Begin to handle argv and execute the corresponding function.
 
     Args:
@@ -313,18 +340,30 @@ def cmdline_start(globals, locals = None, *, argv = sys.argv, header_doc: str = 
         locals (dict, optional): Used to be the execution environment.
         argv (list, optional): Advanced usage. Defaults to sys.argv.
         header_doc (str, optional): Will be printed as the header of help information.
-        has_abbrev (bool, optional): Whether to support abbreviations. Defaults to True.
+        has_abbrev (bool, optional): Whether to support abbreviations. Defaults to False. Be careful when using this option. The abbreviation may be dynamically changed.
     """
     global _called_func
     
+    # ensure only one call
+    if _called_func:
+        #return
+        pass # This function has to be called in main program explicitly.
+    
+    if not globals:
+        globals = inspect.currentframe().f_back.f_globals
+    
     if len(argv) == 1:
         if not registered_func_default:
-            return 
+            return
         argv.append(registered_func_default.__name__)
     
     if argv[1] == 'help' or argv[1] == '--help' or argv[1] == '-h':
         help(header_doc)
         return
+    
+    if argv[1][0] == '-':
+        # use the default function
+        argv.insert(1, registered_func_default.__name__)
     
     func = match_and_check(argv[1])
     
@@ -360,4 +399,5 @@ def cmdline_start(globals, locals = None, *, argv = sys.argv, header_doc: str = 
     func_call_str += ', '.join(final_args)
     func_call_str += ')'
     
-    eval(func_call_str, globals, locals)
+    # Return the called function's return value.
+    return eval(func_call_str, globals, locals)
