@@ -4,10 +4,11 @@ import docstring_parser
 import sys
 import ast
 import types
+from typing import Callable, Any, List
 
 # functions taged by @cmdline
-registered_funcs = []
-registered_func_default = None
+registered_funcs: List[Callable[..., Any]] = []
+registered_func_default: Callable[..., Any] = None
 
 # Main eval function in this module must be called only once.
 _called_func = None
@@ -138,7 +139,7 @@ def hibit_variadic(func: callable):
             color_end()
             exit(1)
 
-def cmdline_default(func):
+def cmdline_default(func: Callable[..., Any]) -> Callable[..., Any]:
     global registered_func_default
     global registered_funcs
     
@@ -159,7 +160,7 @@ def cmdline_default(func):
     # globals()[funcname] = func
     return func
 
-def cmdline(func):
+def cmdline(func: Callable[..., Any]) -> Callable[..., Any]:
     global registered_funcs
     if func not in registered_funcs:
         registered_funcs.append(func)
@@ -168,7 +169,7 @@ def cmdline(func):
     return func
 
     
-def cmd_help(func: callable, has_abbrev = True):
+def cmd_help(func: Callable[..., Any], has_abbrev: bool = True):
     args_list = decode_func_args(func)
     
     func_desc = docstring_parser.parse(func.__doc__).description
@@ -366,6 +367,9 @@ def cmdline_start(globals = None, locals = None, *, argv = sys.argv, header_doc:
     
     if argv[1] == 'help' or argv[1] == '--help' or argv[1] == '-h':
         help(header_doc)
+        return
+    
+    if not registered_func_default and argv[1][0] == '-':
         return
     
     if argv[1][0] == '-':
