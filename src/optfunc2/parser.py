@@ -340,7 +340,7 @@ def called_directly():
 
 
 # def parse_run(argv = sys.argv[1:]):
-def cmdline_start(globals = None, locals = None, *, argv = sys.argv, header_doc: str = 'Help Tips Provided by Autocall.', has_abbrev = False, print_retval = True):
+def cmdline_start(globals = None, locals = None, *, argv = sys.argv, header_doc: str = 'Help Tips Provided by Autocall.', has_abbrev = False, print_retval = False):
     """Begin to handle argv and execute the corresponding function.
 
     Args:

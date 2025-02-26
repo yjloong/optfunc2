@@ -110,6 +110,25 @@ class TestBasicFunctionality:
             print(f'{type(data)}')
         output = capture_output(["test_optfunc2.py", "type_test", "--data", "[1,2,3]"], globals(), locals=locals())
         assert "list" in output
+        
+    def test_return_value(self):
+        @cmdline
+        def return_test():
+            return "Hello World"
+        
+        output = capture_output(["test_optfunc2.py", "return_test"], globals(), locals=locals())
+        assert "Hello World" in output
+
+    def test_return_value2(self, print_retval: bool = False):
+        @cmdline
+        def return_test():
+            if print_retval:
+                return "Hello World"
+        
+        output = capture_output(["test_optfunc2.py", "return_test"], globals(), locals=locals())
+        assert "Hello World" not in output
+    
+    
 
 # --------------------------
 # 边界条件测试
