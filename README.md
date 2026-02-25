@@ -4,6 +4,7 @@
 1. Allow user call functions directly in command line.
 2. Generate help tips automatically.
 3. Add default called functions if not function was specific.
+4. Support hexadecimal format input for integer arguments.
 
 ### Notice
 1. It's better to add argument type for each autocall functions.
@@ -46,6 +47,42 @@ def stats(numbers: list):
 
 if __name__ == "__main__":
     cmdline_start(header_doc="✨ calc CLI", has_abbrev=True)
+```
+
+### Hexadecimal Support
+optfunc2 now supports hexadecimal format input for integer arguments. You can use both decimal and hexadecimal formats:
+
+```python
+@cmdline
+def hex_converter(number: int):
+    """Convert number to different bases
+    
+    Args:
+        number: Input number (supports decimal and hexadecimal)
+    """
+    print(f"Decimal: {number}")
+    print(f"Hexadecimal: {hex(number)}")
+    print(f"Binary: {bin(number)}")
+```
+
+Usage examples:
+```bash
+# Decimal input
+$ python example.py hex_converter --number 42
+Decimal: 42
+Hexadecimal: 0x2a
+Binary: 0b101010
+
+# Hexadecimal input (both lowercase and uppercase supported)
+$ python example.py hex_converter --number 0x2A
+Decimal: 42
+Hexadecimal: 0x2a
+Binary: 0b101010
+
+$ python example.py hex_converter --number 0XFF
+Decimal: 255
+Hexadecimal: 0xff
+Binary: 0b11111111
 ```
 
 ### Generate help tips automatically

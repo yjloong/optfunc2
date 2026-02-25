@@ -96,7 +96,15 @@ def decode_opts(arg_pairs, func: callable):
         
         try:
             if anno not in [dict, list, inspect.Signature.empty] and type(anno) != types.UnionType:
-                value = anno(val)
+                # Special handling for int type to support hex format
+                if anno == int:
+                    # Check if the value is in hex format (starts with 0x or 0X)
+                    if isinstance(val, str) and val.lower().startswith('0x'):
+                        value = int(val, 16)
+                    else:
+                        value = anno(val)
+                else:
+                    value = anno(val)
             else:
                 try: 
                     value = ast.literal_eval(val)
