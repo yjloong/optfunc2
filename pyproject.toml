@@ -1,6 +1,6 @@
 [project]
 name = "optfunc2"
-version = "0.2.6"
+version = "0.2.7"
 description = "Generate command line options and help/tips from function automatically."
 authors = [
     {name = "bajeer",email = "z-bajeer@yeah.net"}
