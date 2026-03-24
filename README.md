@@ -1,17 +1,30 @@
-# optfunc2
+<p align="center">
+  <strong>optfunc2</strong><br>
+  Auto-generate CLI from Python functions — zero boilerplate.
+</p>
 
-> Auto-generate CLI from Python functions with type annotations and docstrings.
+<p align="center">
+  <a href="https://pypi.org/project/optfunc2/"><img src="https://img.shields.io/pypi/v/optfunc2?color=blue" alt="PyPI"></a>
+  <a href="https://pypi.org/project/optfunc2/"><img src="https://img.shields.io/pypi/pyversions/optfunc2" alt="Python"></a>
+  <a href="https://github.com/yjloong/optfunc2/blob/main/LICENSE.txt"><img src="https://img.shields.io/badge/license-PyPA-green" alt="License"></a>
+</p>
 
-Turn any Python function into a CLI command — no argparse, no click, no boilerplate. Just add a decorator and your function's signature becomes the interface.
+---
 
-## Features
+> Turn any Python function into a CLI command — no `argparse`, no `click`, no boilerplate. Just add a decorator and your function's signature becomes the interface.
 
-- **Zero boilerplate** — `@cmdline` decorator + type annotations = full CLI
-- **Auto-generated help** — parsed from docstrings (Google style) and type hints
-- **Type coercion** — `int`, `float`, `bool`, `str`, `list`, `dict`, `Union` types
-- **Hex support** — `0x2A` input for integer arguments
-- **Default command** — `@cmdline_default` for the "run with no args" experience
-- **Shell abbreviations** — `-a value` as shortcut for `--arg value`
+## Why optfunc2?
+
+|  | **optfunc2** | argparse | click | typer |
+|---|---|---|---|---|
+| Lines to add a CLI command | **~1** (decorator) | ~15 | ~8 | ~5 |
+| Auto-generated help from docstring | ✅ | ❌ | ❌ | ✅ |
+| Type coercion from annotations | ✅ | Manual | Manual | ✅ |
+| Shell abbreviation (`-a` for `--arg`) | ✅ | ❌ | ❌ | ❌ |
+| Hex input support (`0x2A`) | ✅ | ❌ | ❌ | ❌ |
+| Dependencies | **1** (`docstring-parser`) | stdlib | click | typer+click |
+| External dependencies | prettytable (optional) | 0 | 7+ | 20+ |
+| Union types (`int \| float`) | ✅ | ❌ | ❌ | ✅ |
 
 ## Install
 
@@ -57,7 +70,7 @@ $ python calc.py help                      # show all commands
 $ python calc.py add -h                    # show command help
 ```
 
-## How It Works
+## Features
 
 ### Decorators
 
