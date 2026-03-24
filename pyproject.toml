@@ -1,7 +1,7 @@
 [project]
 name = "optfunc2"
 version = "0.2.8"
-description = "Generate command line options and help/tips from function automatically."
+description = "Turn any Python function into a CLI command with zero boilerplate. Just add @cmdline and your function signature becomes the interface."
 authors = [
     {name = "bajeer",email = "z-bajeer@yeah.net"}
 ]
