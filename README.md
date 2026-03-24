@@ -1,158 +1,155 @@
-# Call function directly in cmd line
+# optfunc2
 
-### Features
-1. Allow user call functions directly in command line.
-2. Generate help tips automatically.
-3. Add default called functions if not function was specific.
-4. Support hexadecimal format input for integer arguments.
+> Auto-generate CLI from Python functions with type annotations and docstrings.
 
-### Notice
-1. It's better to add argument type for each autocall functions.
-2. Function with @optfunc_default has @optfunc implicitly.
-3. Not support two type of variadic arguments.
+Turn any Python function into a CLI command — no argparse, no click, no boilerplate. Just add a decorator and your function's signature becomes the interface.
 
-### Code example1 -- calculator
-``` python
+## Features
+
+- **Zero boilerplate** — `@cmdline` decorator + type annotations = full CLI
+- **Auto-generated help** — parsed from docstrings (Google style) and type hints
+- **Type coercion** — `int`, `float`, `bool`, `str`, `list`, `dict`, `Union` types
+- **Hex support** — `0x2A` input for integer arguments
+- **Default command** — `@cmdline_default` for the "run with no args" experience
+- **Shell abbreviations** — `-a value` as shortcut for `--arg value`
+
+## Install
+
+```bash
+pip install optfunc2
+```
+
+## Quick Start
+
+```python
 from optfunc2 import cmdline, cmdline_default, cmdline_start
 
 @cmdline_default
 def add(a: float, b: float):
-    """add two numbers
+    """Add two numbers
 
     Args:
-        a (float): The First number
-        b (float): The Second number
+        a: The first number
+        b: The second number
     """
     print(f"{a} + {b} = {a + b}")
 
 @cmdline
-def multiply(x: int|float, y: int = 5):
-    """multiply two numbers. The second number is optional.
+def multiply(x: int | float, y: int = 5):
+    """Multiply two numbers
 
     Args:
-        x (int): The First number
-        y (int, optional): The Second number. Defaults to 5.
+        x: The first number
+        y: The second number (default 5)
     """
     print(f"{x} × {y} = {x * y}")
-
-@cmdline
-def stats(numbers: list):
-    """statistics of numbers in list
-
-    Args:
-        numbers (list): Target List.
-    """ 
-    print(f"sum: {sum(numbers)}")
-    print(f"average: {sum(numbers)/len(numbers):.2f}")
 
 if __name__ == "__main__":
     cmdline_start(header_doc="✨ calc CLI", has_abbrev=True)
 ```
 
-### Hexadecimal Support
-optfunc2 now supports hexadecimal format input for integer arguments. You can use both decimal and hexadecimal formats:
+```bash
+$ python calc.py add --a 2.3 --b 3        # 2.3 + 3.0 = 5.3
+$ python calc.py add -a 2.3 -b 3           # abbreviation works too
+$ python calc.py multiply --x 3            # 3 × 5 = 15
+$ python calc.py                           # uses default command
+$ python calc.py help                      # show all commands
+$ python calc.py add -h                    # show command help
+```
+
+## How It Works
+
+### Decorators
+
+| Decorator | Description |
+|---|---|
+| `@cmdline` | Register a function as a CLI command |
+| `@cmdline_default` | Same as above, but also the default when no command is given |
+
+### Type Support
+
+| Type | Input Example | Notes |
+|---|---|---|
+| `int` | `--n 42` or `--n 0x2A` | Hex format supported |
+| `float` | `--r 3.14` | |
+| `str` | `--name hello` | |
+| `bool` | `--verbose` (no value needed) | |
+| `list` | `--items '[1, 2, 3]'` | Parsed via `ast.literal_eval` |
+| `dict` | `--cfg '{"key": "val"}'` | Parsed via `ast.literal_eval` |
+| `int \| float` | `--x 3` or `--x 2.5` | Union types supported |
+
+### Argument Styles
+
+```bash
+# All of these are equivalent:
+python app.py my_cmd --name hello --count 3
+python app.py my_cmd --name=hello --count=3
+python app.py my_cmd -n hello -c 3        # abbreviations (when has_abbrev=True)
+python app.py my_cmd -nhello -c3          # abbreviation + value combined
+```
+
+### `cmdline_start()` Options
+
+```python
+cmdline_start(
+    header_doc="My App",      # Header text shown in help
+    has_abbrev=True,          # Enable single-char abbreviation (-a for --arg)
+    print_retval=False,       # Print return value to stdout
+)
+```
+
+### `called_directly()`
+
+Check if the current function was invoked by optfunc2 (vs. called by another function):
 
 ```python
 @cmdline
-def hex_converter(number: int):
-    """Convert number to different bases
-    
-    Args:
-        number: Input number (supports decimal and hexadecimal)
-    """
-    print(f"Decimal: {number}")
-    print(f"Hexadecimal: {hex(number)}")
-    print(f"Binary: {bin(number)}")
+def main():
+    if called_directly():
+        print("Called from CLI")
+    else:
+        print("Called from another function")
 ```
 
-Usage examples:
+## Help Output
+
 ```bash
-# Decimal input
-$ python example.py hex_converter --number 42
-Decimal: 42
-Hexadecimal: 0x2a
-Binary: 0b101010
-
-# Hexadecimal input (both lowercase and uppercase supported)
-$ python example.py hex_converter --number 0x2A
-Decimal: 42
-Hexadecimal: 0x2a
-Binary: 0b101010
-
-$ python example.py hex_converter --number 0XFF
-Decimal: 255
-Hexadecimal: 0xff
-Binary: 0b11111111
-```
-
-### Generate help tips automatically
-``` bash
-~/optfunc2$ python src/example_calc.py help
-Usage: src/example_calc.py [command] [<args>|--help]
+$ python calc.py help
+Usage: calc.py [command] [<args>|--help]
 
 ✨ calc CLI
 
 commands:
-    add          [default] add two numbers
-    multiply     multiply two numbers. The second number is optional.
-    stats        statistics of numbers in list
+    add          [default] Add two numbers
+    multiply     Multiply two numbers
 
-~/optfunc2$ python src/example_calc.py add -h
-Usage: src/example_calc.py add [OPTIONS]
+$ python calc.py add -h
+Usage: calc.py add [OPTIONS]
 
-add two numbers
-
+Add two numbers
 
 Arguments:
-+-----+--------+-------+---------+-------------------+
-| Opt | Abbrev |  Type | Default |        Desc       |
-+-----+--------+-------+---------+-------------------+
-| --a |   -a   | float |         |  The First number |
-| --b |   -b   | float |         | The Second number |
-+-----+--------+-------+---------+-------------------+
-
-
-~/optfunc2$ python src/example_calc.py stats -h
-Usage: src/example_calc.py stats [OPTIONS]
-
-statistics of numbers in list
-
-
-Arguments:
-+-----------+--------+------+---------+--------------+
-|    Opt    | Abbrev | Type | Default |     Desc     |
-+-----------+--------+------+---------+--------------+
-| --numbers |   -n   | list |         | Target List. |
-+-----------+--------+------+---------+--------------+
++------+--------+-------+---------+------------------+
+| Opt  | Abbrev |  Type | Default |      Desc       |
++------+--------+-------+---------+------------------+
+| --a  |   -a   | float |         | The first number |
+| --b  |   -b   | float |         | The second number|
++------+--------+-------+---------+------------------+
 ```
 
-### Usage
-``` bash
-~/optfunc2$ python src/example_calc.py add -a 2.3 -b 3
-2.3 + 3.0 = 5.3
-~/optfunc2$ python src/example_calc.py -a 2.3 -b 3
-2.3 + 3.0 = 5.3
-~/optfunc2$ python src/example_calc.py multiply -x 3
-3 × 5 = 15
-~/optfunc2$ python src/example_calc.py multiply -x 2.3
-2.3 × 5 = 11.5
-~/optfunc2$ python src/example_calc.py stats --numbers '[1, 2, 3, 4, 5]'
-sum: 15
-average: 3.00
-```
+## Real-World Example
 
-### Code example2 -- list files
-``` python
+```python
 from optfunc2 import cmdline, cmdline_default, cmdline_start
 import os
 
 @cmdline_default
 def list_files(directory: str = ".", show_size: bool = False):
-    """List files in a directory.
+    """List files in a directory
 
     Args:
-        directory (str, optional): Target directory. Defaults to ".".
-        show_size (bool, optional): Whether to show size of file. Defaults to False.
+        directory: Target directory (default ".")
+        show_size: Show file size in bytes
     """
     for f in os.listdir(directory):
         path = os.path.join(directory, f)
@@ -165,35 +162,12 @@ if __name__ == "__main__":
     cmdline_start(header_doc="📁 file manager", has_abbrev=True)
 ```
 
-### Usage
-``` bash
-$ python src/example_file_operator.py -h
-Usage: src/example_file_operator.py [command] [<args>|--help]
+## Limitations
 
-📁 file manager
+- Variadic arguments (`*args`, `**kwargs`) are not supported
+- Abbreviation conflicts (e.g., `text` and `test` both want `-t`) are resolved silently — first one wins
+- Negative numbers as values require `--arg=-1` syntax (not `--arg -1`)
 
-commands:
-    list_files     [default] List files in a directory.
+## License
 
-$ python src/example_file_operator.py list_files -h
-Usage: src/example_file_operator.py list_files [OPTIONS]
-
-List files in a directory.
-
-
-Arguments:
-+-------------+--------+------+---------+--------------------------------------------------+
-|     Opt     | Abbrev | Type | Default |                       Desc                       |
-+-------------+--------+------+---------+--------------------------------------------------+
-| --directory |   -d   | str  |   '.'   |        Target directory. Defaults to ".".        |
-| --show_size |   -s   | bool |  False  | Whether to show size of file. Defaults to False. |
-+-------------+--------+------+---------+--------------------------------------------------+
-$ python src/example_file_operator.py
-LICENSE.txt
-.gitignore
-pyproject.toml
-$ python src/example_file_operator.py -s
-LICENSE.txt (1081 bytes)
-.gitignore (132 bytes)
-pyproject.toml (719 bytes)
-```
+PyPA License — see [LICENSE.txt](LICENSE.txt)
