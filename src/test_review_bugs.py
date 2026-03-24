@@ -1,8 +1,8 @@
 """
 Code review bug regression tests for optfunc2.
-Each test verifies a bug discovered during code review.
+Tests verify that previously reported bugs are now fixed.
+Uses module-scoped isolation to avoid polluting other test files.
 """
-import os
 import sys
 from io import StringIO
 from pathlib import Path
@@ -16,7 +16,6 @@ RCE_FLAG = "/tmp/optfunc2_test_rce_flag"
 
 
 def reset_state():
-    """Reset global state between tests to avoid pollution."""
     parser_mod.registered_funcs.clear()
     parser_mod.registered_func_default = None
     parser_mod._called_func = None
@@ -32,38 +31,46 @@ def capture_output(argv, globals_dict=None, locals_dict=None):
         sys.stdout, sys.stderr = old_out, old_err
 
 
+# Save and restore global state around the entire module
+@pytest.fixture(scope="module", autouse=True)
+def isolate_parser_state():
+    saved_funcs = list(parser_mod.registered_funcs)
+    saved_default = parser_mod.registered_func_default
+    saved_called = parser_mod._called_func
+    yield
+    parser_mod.registered_funcs.clear()
+    parser_mod.registered_funcs.extend(saved_funcs)
+    parser_mod.registered_func_default = saved_default
+    parser_mod._called_func = saved_called
+
+
 # -----------------------------------------------------------------------
-# Bug 1: eval() RCE — arbitrary code execution via __repr__
+# Bug 1 (FIXED): eval() RCE
 # -----------------------------------------------------------------------
 class TestEvalRCE:
     def setup_method(self):
         reset_state()
         Path(RCE_FLAG).unlink(missing_ok=True)
-
     def teardown_method(self):
         Path(RCE_FLAG).unlink(missing_ok=True)
         reset_state()
 
-    def test_rce_via_repr(self):
-        """A type with malicious __repr__ gets eval'd, executing arbitrary code."""
-        # Use a hardcoded path in repr (no self reference)
+    def test_rce_no_longer_possible(self):
         class Evil:
             def __init__(self, v):
                 self.v = v
             def __repr__(self):
                 return "__import__('pathlib').Path('/tmp/optfunc2_test_rce_flag').write_text('pwned')"
-
         @cmdline
         def f(x: Evil):
             return x
-
         capture_output(["prog", "f", "--x", "anything"],
                        globals_dict=globals(), locals_dict=locals())
-        assert Path(RCE_FLAG).exists(), "eval() executed arbitrary code via __repr__"
+        assert not Path(RCE_FLAG).exists(), "RCE should be fixed"
 
 
 # -----------------------------------------------------------------------
-# Bug 2: called_directly() crashes when _called_func is None
+# Bug 2 (FIXED): called_directly() null guard
 # -----------------------------------------------------------------------
 class TestCalledDirectlyNull:
     def setup_method(self):
@@ -71,13 +78,12 @@ class TestCalledDirectlyNull:
     def teardown_method(self):
         reset_state()
 
-    def test_called_directly_no_prior_start(self):
-        with pytest.raises(AttributeError, match="NoneType.*__name__"):
-            called_directly()
+    def test_called_directly_returns_false_when_not_started(self):
+        assert called_directly() is False
 
 
 # -----------------------------------------------------------------------
-# Bug 3: UnionType (int|float) has no __name__ — crashes --help
+# Bug 3 (FIXED): UnionType support
 # -----------------------------------------------------------------------
 class TestUnionTypeHelpCrash:
     def setup_method(self):
@@ -85,17 +91,25 @@ class TestUnionTypeHelpCrash:
     def teardown_method(self):
         reset_state()
 
-    def test_union_type_help_raises(self):
+    def test_union_type_help_no_crash(self):
         @cmdline
         def uf(v: int | float):
             return v
-        with pytest.raises(AttributeError, match="UnionType.*__name__"):
-            capture_output(["prog", "uf", "--help"],
-                          globals_dict=globals(), locals_dict=locals())
+        result, out, _ = capture_output(["prog", "uf", "--help"],
+                                         globals_dict=globals(), locals_dict=locals())
+        assert "int | float" in out
+
+    def test_union_type_execution(self):
+        @cmdline
+        def add(x: int | float, y: int | float):
+            return x + y
+        result, _, _ = capture_output(["prog", "add", "--x", "3", "--y", "2.5"],
+                                     globals_dict=globals(), locals_dict=locals())
+        assert result == 5.5
 
 
 # -----------------------------------------------------------------------
-# Bug 4: Negative number argument parsed as new option
+# Bug 4 (open): Negative number arg
 # -----------------------------------------------------------------------
 class TestNegativeNumberArg:
     def setup_method(self):
@@ -115,13 +129,13 @@ class TestNegativeNumberArg:
         @cmdline
         def nf(n: int):
             return n
-        result, *_ = capture_output(["prog", "nf", "--n=-1"],
-                                   globals_dict=globals(), locals_dict=locals())
+        result, _, _ = capture_output(["prog", "nf", "--n=-1"],
+                                     globals_dict=globals(), locals_dict=locals())
         assert result == -1
 
 
 # -----------------------------------------------------------------------
-# Bug 5: Empty registered_funcs causes help() to crash
+# Bug 5 (open): Empty help crash
 # -----------------------------------------------------------------------
 class TestEmptyHelpCrash:
     def setup_method(self):
@@ -135,7 +149,7 @@ class TestEmptyHelpCrash:
 
 
 # -----------------------------------------------------------------------
-# Bug 6: dict annotation — behavior check
+# Bug 6: dict annotation
 # -----------------------------------------------------------------------
 class TestDictFallback:
     def setup_method(self):
@@ -155,10 +169,6 @@ class TestDictFallback:
         @cmdline
         def df(d: dict):
             return d
-        result, *_ = capture_output(["prog", "df", "--d", '{"key": "value"}'],
-                                   globals_dict=globals(), locals_dict=locals())
+        result, _, _ = capture_output(["prog", "df", "--d", '{"key": "value"}'],
+                                     globals_dict=globals(), locals_dict=locals())
         assert result == {"key": "value"}
-
-
-if __name__ == "__main__":
-    pytest.main(["-v", __file__])

@@ -4,7 +4,7 @@ import docstring_parser
 import sys
 import ast
 import types
-from typing import Callable, Any, List
+from typing import Callable, Any, List, get_origin, get_args
 
 # functions taged by @cmdline
 registered_funcs: List[Callable[..., Any]] = []
@@ -28,6 +28,19 @@ def color_begin(color):
     
 def color_end():
     print('\033[0m', end='')
+
+
+def type_name(anno) -> str:
+    """Get a human-readable name for a type annotation, handling UnionType."""
+    if anno == inspect.Signature.empty:
+        return 'any'
+    if get_origin(anno) is types.UnionType:
+        args = get_args(anno)
+        return ' | '.join(a.__name__ for a in args if hasattr(a, '__name__'))
+    if hasattr(anno, '__name__'):
+        return anno.__name__
+    return str(anno)
+
 
 def decode_func_args(func: callable):
     """
@@ -114,10 +127,11 @@ def decode_opts(arg_pairs, func: callable):
                 anno_new = type(value)
 
                 if anno != inspect.Signature.empty:
-                    if type(anno) == types.UnionType:
-                        type_list = [i.strip() for i in str(anno).split('|')]
-                        if anno_new.__name__ not in type_list:
-                            raise Exception(f'Type of {opt} should be one of {repr(type_list)}.')
+                    if get_origin(anno) is types.UnionType:
+                        allowed = get_args(anno)
+                        if anno_new not in allowed:
+                            names = [a.__name__ for a in allowed if hasattr(a, '__name__')]
+                            raise TypeError(f'Type of {opt} should be one of {names}, got {anno_new.__name__}.')
                          
                     elif anno_new != anno:
                         print(f'{anno_new = } {anno = }')
@@ -214,10 +228,7 @@ def cmd_help(func: Callable[..., Any], has_abbrev: bool = True):
         else:
             abbrev = '-' + abbrev
         
-        if anno == inspect.Signature.empty:
-            anno = 'any'
-        else:
-            anno = anno.__name__
+        anno = type_name(anno)
         
         if default == inspect.Signature.empty:
             default = empty_tag
@@ -343,6 +354,8 @@ def called_directly():
         bool: True means called by optfunc2 directly.
     """
     global _called_func
+    if _called_func is None:
+        return False
     return _called_func.__name__ == inspect.currentframe().f_back.f_code.co_name
 
 
@@ -406,20 +419,18 @@ def cmdline_start(globals = None, locals = None, *, argv = sys.argv, header_doc:
     # get opt_list from arg_pairs
     opt_list = decode_opts(arg_pairs, func)
 
-    final_args = []
+    # Build args/kwargs for direct function call (replaces unsafe eval)
+    args = []
+    kwargs = {}
     
     for (typ, name, anno, value) in opt_list:
-        if typ != inspect.Parameter.POSITIONAL_ONLY:
-            final_args.append(f'{name}={repr(value)}')
+        if typ == inspect.Parameter.POSITIONAL_ONLY:
+            args.append(value)
         else:
-            final_args.append(repr(value))
-    
-    func_call_str = f'{func.__name__}('    
-    func_call_str += ', '.join(final_args)
-    func_call_str += ')'
+            kwargs[name] = value
     
     # Return the called function's return value.
-    retval = eval(func_call_str, globals, locals)
+    retval = func(*args, **kwargs)
     if (print_retval):
         print(retval)
         
